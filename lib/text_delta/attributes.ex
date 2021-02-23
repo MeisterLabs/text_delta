@@ -131,6 +131,13 @@ defmodule TextDelta.Attributes do
     transform(left, %{}, priority)
   end
 
+  def transform(%{ops: ops_left}, %{ops: ops_right}, priority) do
+    delta_left = TextDelta.new(ops_left)
+    delta_right = TextDelta.new(ops_right)
+
+    TextDelta.transform(delta_left, delta_right, priority)
+  end
+
   def transform(_, right, :right) do
     right
   end
