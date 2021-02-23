@@ -55,14 +55,20 @@ defmodule TextDelta.Attributes do
 
   def compose(first, second, true) do
     Map.merge(first, second)
+    |> Enum.map(fn {key, _} ->
+      value_before = Map.get(first, key)
+      value_after = Map.get(second, key)
+      compose_attr(key, value_before, value_after, true)
+    end)
   end
 
   def compose(first, second, false) do
     first
     |> Map.merge(second)
-    |> Enum.map(fn {key, value_after} ->
+    |> Enum.map(fn {key, _} ->
       value_before = Map.get(first, key)
-      compose_attr(key, value_before, value_after)
+      value_after = Map.get(second, key)
+      compose_attr(key, value_before, value_after, false)
     end)
     |> remove_nils()
   end
@@ -79,7 +85,10 @@ defmodule TextDelta.Attributes do
     {key, delta_patch}
   end
 
-  defp compose_attr(key, _, value_after), do: {key, value_after}
+  defp compose_attr(key, nil, value_after, _keep_nils), do: {key, value_after}
+  defp compose_attr(key, value_before, nil, false), do: {key, value_before}
+  defp compose_attr(key, _value_before, nil, true), do: {key, nil}
+  defp compose_attr(key, _value_before, value_after, _keep_nils), do: {key, value_after}
 
   @doc """
   Calculates and returns difference between two sets of attributes.
