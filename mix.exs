@@ -1,7 +1,7 @@
 defmodule TextDelta.Mixfile do
   use Mix.Project
 
-  @version "1.4.0"
+  @version "1.5.0"
   @github_url "https://github.com/deltadoc/text_delta"
 
   def project do
@@ -62,9 +62,7 @@ defmodule TextDelta.Mixfile do
   defp deps do
     [
       {:ex_doc, "~> 0.15", only: [:dev], runtime: false},
-      {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
-      {:credo, "~> 0.7", only: [:dev, :test], runtime: false},
-      {:eqc_ex, "~> 1.4", only: [:dev, :test], runtime: false}
+      {:credo, "~> 1.5.4", only: [:dev, :test], runtime: false}
     ]
   end
 end
