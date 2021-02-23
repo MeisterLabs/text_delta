@@ -97,14 +97,38 @@ defmodule TextDelta.Attributes do
   @spec diff(t, t) :: t
   def diff(attrs_a, attrs_b)
 
-  def diff(nil, attrs_b), do: diff(%{}, attrs_b)
-  def diff(attrs_a, nil), do: diff(attrs_a, %{})
-
   def diff(attrs_a, attrs_b) do
-    %{}
-    |> add_changes(attrs_a, attrs_b)
-    |> add_deletions(attrs_a, attrs_b)
+    attributes_a_keys = Map.keys(attrs_a)
+    attributes_b_keys = Map.keys(attrs_b)
+
+    attributes_a_keys
+    |> Enum.concat(attributes_b_keys)
+    |> Enum.reduce(%{}, fn key, acc ->
+      value_a = Map.get(attrs_a, key)
+      value_b = Map.get(attrs_b, key)
+
+      diff_attribute(value_a, value_b, key, acc)
+    end)
   end
+
+  defp diff_attribute(_attr_value_a, nil, key, result),
+    do: Map.put(result, key, nil)
+
+  defp diff_attribute(nil, attr_value_b, key, result),
+    do: Map.put(result, key, attr_value_b)
+
+  defp diff_attribute(%{ops: left_ops}, %{ops: right_ops}, key, result) do
+    diff = TextDelta.diff(left_ops, right_ops)
+    Map.put(result, key, diff)
+  end
+
+  defp diff_attribute(attr_value_a, attr_value_b, _key, result)
+       when attr_value_a == attr_value_b,
+       do: result
+
+  defp diff_attribute(attr_value_a, attr_value_b, key, result)
+       when attr_value_a != attr_value_b,
+       do: Map.put(result, key, attr_value_b)
 
   @doc """
   Transforms `right` attribute set against the `left` one.
@@ -144,21 +168,6 @@ defmodule TextDelta.Attributes do
 
   def transform(left, right, :left) do
     remove_duplicates(right, left)
-  end
-
-  defp add_changes(result, from, to) do
-    to
-    |> Enum.filter(fn {key, val} -> Map.get(from, key) != val end)
-    |> Enum.into(%{})
-    |> Map.merge(result)
-  end
-
-  defp add_deletions(result, from, to) do
-    from
-    |> Enum.filter(fn {key, _} -> not Map.has_key?(to, key) end)
-    |> Enum.map(fn {key, _} -> {key, nil} end)
-    |> Enum.into(%{})
-    |> Map.merge(result)
   end
 
   defp remove_nils(result) do
