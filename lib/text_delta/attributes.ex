@@ -97,14 +97,40 @@ defmodule TextDelta.Attributes do
   @spec diff(t, t) :: t
   def diff(attrs_a, attrs_b)
 
-  def diff(nil, attrs_b), do: diff(%{}, attrs_b)
-  def diff(attrs_a, nil), do: diff(attrs_a, %{})
-
   def diff(attrs_a, attrs_b) do
-    %{}
-    |> add_changes(attrs_a, attrs_b)
-    |> add_deletions(attrs_a, attrs_b)
+    attributes_a_keys = Map.keys(attrs_a)
+    attributes_b_keys = Map.keys(attrs_b)
+
+    attributes_a_keys
+    |> Enum.concat(attributes_b_keys)
+    |> Enum.reduce(%{}, fn key, acc ->
+      value_a = Map.get(attrs_a, key)
+      value_b = Map.get(attrs_b, key)
+
+      diff_attribute(value_a, value_b, key, acc)
+    end)
   end
+
+  defp diff_attribute(_attr_value_a, nil, key, result),
+    do: Map.put(result, key, nil)
+
+  defp diff_attribute(nil, attr_value_b, key, result),
+    do: Map.put(result, key, attr_value_b)
+
+  defp diff_attribute(%{ops: left_ops}, %{ops: right_ops}, key, result) do
+    delta_left = TextDelta.new(left_ops)
+    delta_right = TextDelta.new(right_ops)
+    {:ok, ops} = TextDelta.diff(delta_left, delta_right)
+    Map.put(result, key, ops)
+  end
+
+  defp diff_attribute(attr_value_a, attr_value_b, _key, result)
+       when attr_value_a == attr_value_b,
+       do: result
+
+  defp diff_attribute(attr_value_a, attr_value_b, key, result)
+       when attr_value_a != attr_value_b,
+       do: Map.put(result, key, attr_value_b)
 
   @doc """
   Transforms `right` attribute set against the `left` one.
@@ -131,12 +157,41 @@ defmodule TextDelta.Attributes do
     transform(left, %{}, priority)
   end
 
-  def transform(_, right, :right) do
+  def transform(left, right, priority) do
+    transformed = transform_inner(left, right, priority)
+    nested = transform_nested(left, right, priority)
+
+    Map.merge(transformed, nested)
+  end
+
+  def transform_inner(_, right, :right) do
     right
   end
 
-  def transform(left, right, :left) do
+  def transform_inner(left, right, :left) do
     remove_duplicates(right, left)
+  end
+
+  def transform_nested(left, right, priority) do
+    left_keys = Map.keys(left)
+    right_keys = Map.keys(right)
+    keys = Enum.uniq(left_keys ++ right_keys)
+
+    keys = keys
+    |> Enum.reduce(%{}, fn key, acc ->
+      transform_nested_delta(acc, key, Map.get(left, key), Map.get(right, key), priority)
+    end)
+  end
+
+  def transform_nested_delta(acc, key, %{ops: ops_left}, %{ops: ops_right}, priority) do
+    delta_left = TextDelta.new(ops_left)
+    delta_right = TextDelta.new(ops_right)
+    delta = TextDelta.transform(delta_left, delta_right, priority)
+    Map.put(acc, key, delta)
+  end
+
+  def transform_nested_delta(acc, _, _, _, _) do
+    acc
   end
 
   defp add_changes(result, from, to) do
