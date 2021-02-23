@@ -118,8 +118,10 @@ defmodule TextDelta.Attributes do
     do: Map.put(result, key, attr_value_b)
 
   defp diff_attribute(%{ops: left_ops}, %{ops: right_ops}, key, result) do
-    diff = TextDelta.diff(left_ops, right_ops)
-    Map.put(result, key, diff)
+    delta_left = TextDelta.new(left_ops)
+    delta_right = TextDelta.new(right_ops)
+    {:ok, ops} = TextDelta.diff(delta_left, delta_right)
+    Map.put(result, key, ops)
   end
 
   defp diff_attribute(attr_value_a, attr_value_b, _key, result)
@@ -155,19 +157,56 @@ defmodule TextDelta.Attributes do
     transform(left, %{}, priority)
   end
 
-  def transform(%{ops: ops_left}, %{ops: ops_right}, priority) do
-    delta_left = TextDelta.new(ops_left)
-    delta_right = TextDelta.new(ops_right)
+  def transform(left, right, priority) do
+    transformed = transform_inner(left, right, priority)
+    nested = transform_nested(left, right, priority)
 
-    TextDelta.transform(delta_left, delta_right, priority)
+    Map.merge(transformed, nested)
   end
 
-  def transform(_, right, :right) do
+  def transform_inner(_, right, :right) do
     right
   end
 
-  def transform(left, right, :left) do
+  def transform_inner(left, right, :left) do
     remove_duplicates(right, left)
+  end
+
+  def transform_nested(left, right, priority) do
+    left_keys = Map.keys(left)
+    right_keys = Map.keys(right)
+    keys = Enum.uniq(left_keys ++ right_keys)
+
+    keys = keys
+    |> Enum.reduce(%{}, fn key, acc ->
+      transform_nested_delta(acc, key, Map.get(left, key), Map.get(right, key), priority)
+    end)
+  end
+
+  def transform_nested_delta(acc, key, %{ops: ops_left}, %{ops: ops_right}, priority) do
+    delta_left = TextDelta.new(ops_left)
+    delta_right = TextDelta.new(ops_right)
+    delta = TextDelta.transform(delta_left, delta_right, priority)
+    Map.put(acc, key, delta)
+  end
+
+  def transform_nested_delta(acc, _, _, _, _) do
+    acc
+  end
+
+  defp add_changes(result, from, to) do
+    to
+    |> Enum.filter(fn {key, val} -> Map.get(from, key) != val end)
+    |> Enum.into(%{})
+    |> Map.merge(result)
+  end
+
+  defp add_deletions(result, from, to) do
+    from
+    |> Enum.filter(fn {key, _} -> not Map.has_key?(to, key) end)
+    |> Enum.map(fn {key, _} -> {key, nil} end)
+    |> Enum.into(%{})
+    |> Map.merge(result)
   end
 
   defp remove_nils(result) do
