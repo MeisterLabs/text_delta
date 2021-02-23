@@ -76,13 +76,13 @@ defmodule TextDelta.Attributes do
   defp compose_attr(
          key,
          %{ops: ops_before} = _value_before,
-         %{ops: ops_after} = _value_after
+         %{ops: ops_after} = _value_after,
+         _
        ) do
     delta_before = TextDelta.new(ops_before)
     delta_after = TextDelta.new(ops_after)
-
     delta_patch = TextDelta.compose(delta_before, delta_after)
-    {key, delta_patch}
+    {key, Map.from_struct(delta_patch)}
   end
 
   defp compose_attr(key, nil, value_after, _keep_nils), do: {key, value_after}
@@ -129,8 +129,8 @@ defmodule TextDelta.Attributes do
   defp diff_attribute(%{ops: left_ops}, %{ops: right_ops}, key, result) do
     delta_left = TextDelta.new(left_ops)
     delta_right = TextDelta.new(right_ops)
-    {:ok, ops} = TextDelta.diff(delta_left, delta_right)
-    Map.put(result, key, ops)
+    {:ok, delta} = TextDelta.diff(delta_left, delta_right)
+    Map.put(result, key, Map.from_struct(delta))
   end
 
   defp diff_attribute(attr_value_a, attr_value_b, _key, result)
@@ -196,7 +196,7 @@ defmodule TextDelta.Attributes do
     delta_left = TextDelta.new(ops_left)
     delta_right = TextDelta.new(ops_right)
     delta = TextDelta.transform(delta_left, delta_right, priority)
-    Map.put(acc, key, delta)
+    Map.put(acc, key, Map.from_struct(delta))
   end
 
   def transform_nested_delta(acc, _, _, _, _) do
