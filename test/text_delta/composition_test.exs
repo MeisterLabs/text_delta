@@ -1,26 +1,6 @@
 defmodule TextDelta.CompositionTest do
   use ExUnit.Case
-  use EQC.ExUnit
-  import TextDelta.Generators
-
   doctest TextDelta.Composition
-
-  property "(a + b) + c = a + (b + c)" do
-    forall doc <- document() do
-      forall delta_a <- document_delta(doc) do
-        doc_a = TextDelta.compose(doc, delta_a)
-
-        forall delta_b <- document_delta(doc_a) do
-          doc_b = TextDelta.compose(doc_a, delta_b)
-
-          delta_c = TextDelta.compose(delta_a, delta_b)
-          doc_c = TextDelta.compose(doc, delta_c)
-
-          ensure(doc_b == doc_c)
-        end
-      end
-    end
-  end
 
   describe "compose" do
     test "insert with insert" do
