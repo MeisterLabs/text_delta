@@ -1,22 +1,7 @@
 defmodule TextDelta.ApplicationTest do
   use ExUnit.Case
-  use EQC.ExUnit
-  import TextDelta.Generators
 
   doctest TextDelta.Application
-
-  property "state modifications always result in a valid document state" do
-    forall document <- document() do
-      forall delta <- document_delta(document) do
-        new_document = TextDelta.apply!(document, delta)
-
-        ensure(
-          TextDelta.length(new_document) ==
-            TextDelta.length(new_document, [:insert])
-        )
-      end
-    end
-  end
 
   @state TextDelta.insert(TextDelta.new(), "test")
 

@@ -1,29 +1,8 @@
 defmodule TextDeltaTest do
   use ExUnit.Case
-  use EQC.ExUnit
-  import TextDelta.Generators
 
   alias TextDelta.Operation
   doctest TextDelta
-
-  describe "compaction" do
-    property "consecutive operations with same attributes compact" do
-      forall ops <- list(oneof([bitstring_insert(), retain(), delete()])) do
-        delta = TextDelta.new(ops)
-        ensure(consecutive_ops_with_same_attrs(delta) == 0)
-      end
-    end
-
-    defp consecutive_ops_with_same_attrs(%TextDelta{ops: []}), do: 0
-
-    defp consecutive_ops_with_same_attrs(delta) do
-      delta
-      |> TextDelta.operations()
-      |> Enum.chunk_by(&{Operation.type(&1), Map.get(&1, :attributes)})
-      |> Enum.filter(&(Enum.count(&1) > 1))
-      |> Enum.count()
-    end
-  end
 
   describe "create" do
     test "empty delta" do
