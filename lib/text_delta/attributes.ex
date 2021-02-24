@@ -53,44 +53,48 @@ defmodule TextDelta.Attributes do
     compose(first, %{}, keep_nils)
   end
 
-  def compose(first, second, true) do
-    Map.merge(first, second)
-    |> Enum.map(fn {key, _} ->
-      value_before = Map.get(first, key)
-      value_after = Map.get(second, key)
-      compose_attr(key, value_before, value_after, true)
-    end)
-  end
-
-  def compose(first, second, false) do
+  def compose(first, second, keep_nils) do
     first
     |> Map.merge(second)
     |> Enum.map(fn {key, _} ->
+      has_before = Map.has_key?(first, key)
       value_before = Map.get(first, key)
+
+      has_after = Map.has_key?(second, key)
       value_after = Map.get(second, key)
-      compose_attr(key, value_before, value_after, false)
+
+      value =
+        compose_attribute(has_before, value_before, has_after, value_after)
+
+      {key, value}
     end)
-    |> remove_nils()
+    |> Enum.into(%{})
+    |> remove_nils(keep_nils)
   end
 
-  defp compose_attr(
-         key,
-         %{ops: ops_before} = _value_before,
-         %{ops: ops_after} = _value_after,
-         _
-       ) do
+  defp compose_attribute(_, _, %{ops: ops_before}, %{ops: ops_after}) do
     delta_before = TextDelta.new(ops_before)
     delta_after = TextDelta.new(ops_after)
-    delta_patch = TextDelta.compose(delta_before, delta_after)
-    {key, Map.from_struct(delta_patch)}
+
+    delta_before
+    |> TextDelta.compose(delta_after)
+    |> Map.from_struct()
   end
 
-  defp compose_attr(key, nil, value_after, _keep_nils), do: {key, value_after}
-  defp compose_attr(key, value_before, nil, false), do: {key, value_before}
-  defp compose_attr(key, _value_before, nil, true), do: {key, nil}
+  defp compose_attribute(has_before, _value_before, has_after, value_after)
+       when has_before and has_after do
+    value_after
+  end
 
-  defp compose_attr(key, _value_before, value_after, _keep_nils),
-    do: {key, value_after}
+  defp compose_attribute(has_before, _value_before, has_after, value_after)
+       when not has_before and has_after do
+    value_after
+  end
+
+  defp compose_attribute(has_before, value_before, has_after, _value_after)
+       when has_before and not has_after do
+    value_before
+  end
 
   @doc """
   Calculates and returns difference between two sets of attributes.
@@ -217,7 +221,9 @@ defmodule TextDelta.Attributes do
     acc
   end
 
-  defp remove_nils(result) do
+  defp remove_nils(result, true), do: result
+
+  defp remove_nils(result, false) do
     result
     |> Enum.filter(fn {_, v} -> not is_nil(v) end)
     |> Enum.into(%{})
