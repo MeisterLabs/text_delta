@@ -1,7 +1,5 @@
 # TextDelta
 
-[![Build Status](https://travis-ci.org/deltadoc/text_delta.svg?branch=master)](https://travis-ci.org/deltadoc/text_delta)
-
 Elixir counter-part for the Quill.js [Delta](https://quilljs.com/docs/delta/)
 library. It provides a baseline for [Operational
 Transformation](https://en.wikipedia.org/wiki/Operational_transformation) of
@@ -57,7 +55,7 @@ in `mix.exs`:
 
 ```elixir
 def deps do
-  [{:text_delta, "~> 1.1.0"}]
+  [{:text_delta, "~> 1.7.1"}]
 end
 ```
 

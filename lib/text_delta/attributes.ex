@@ -88,7 +88,9 @@ defmodule TextDelta.Attributes do
   defp compose_attr(key, nil, value_after, _keep_nils), do: {key, value_after}
   defp compose_attr(key, value_before, nil, false), do: {key, value_before}
   defp compose_attr(key, _value_before, nil, true), do: {key, nil}
-  defp compose_attr(key, _value_before, value_after, _keep_nils), do: {key, value_after}
+
+  defp compose_attr(key, _value_before, value_after, _keep_nils),
+    do: {key, value_after}
 
   @doc """
   Calculates and returns difference between two sets of attributes.
@@ -186,13 +188,25 @@ defmodule TextDelta.Attributes do
     right_keys = Map.keys(right)
     keys = Enum.uniq(left_keys ++ right_keys)
 
-    keys = keys
+    keys
     |> Enum.reduce(%{}, fn key, acc ->
-      transform_nested_delta(acc, key, Map.get(left, key), Map.get(right, key), priority)
+      transform_nested_delta(
+        acc,
+        key,
+        Map.get(left, key),
+        Map.get(right, key),
+        priority
+      )
     end)
   end
 
-  def transform_nested_delta(acc, key, %{ops: ops_left}, %{ops: ops_right}, priority) do
+  def transform_nested_delta(
+        acc,
+        key,
+        %{ops: ops_left},
+        %{ops: ops_right},
+        priority
+      ) do
     delta_left = TextDelta.new(ops_left)
     delta_right = TextDelta.new(ops_right)
     delta = TextDelta.transform(delta_left, delta_right, priority)
@@ -201,21 +215,6 @@ defmodule TextDelta.Attributes do
 
   def transform_nested_delta(acc, _, _, _, _) do
     acc
-  end
-
-  defp add_changes(result, from, to) do
-    to
-    |> Enum.filter(fn {key, val} -> Map.get(from, key) != val end)
-    |> Enum.into(%{})
-    |> Map.merge(result)
-  end
-
-  defp add_deletions(result, from, to) do
-    from
-    |> Enum.filter(fn {key, _} -> not Map.has_key?(to, key) end)
-    |> Enum.map(fn {key, _} -> {key, nil} end)
-    |> Enum.into(%{})
-    |> Map.merge(result)
   end
 
   defp remove_nils(result) do
