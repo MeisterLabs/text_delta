@@ -85,6 +85,35 @@ defmodule TextDelta.AttributesTest do
 
       assert composition == delta_c
     end
+
+    test "empty delta" do
+      delta_a =
+        TextDelta.new()
+        |> TextDelta.insert(%{block: "one"}, %{
+          two:
+            TextDelta.new()
+            |> TextDelta.insert("three")
+        })
+
+      delta_b =
+        TextDelta.new()
+        |> TextDelta.retain(1, %{
+          two: TextDelta.new()
+        })
+
+      expected_composition =
+        TextDelta.new()
+        |> TextDelta.insert(%{block: "one"}, %{
+          two:
+            TextDelta.new()
+            |> TextDelta.insert("three")
+            |> Map.from_struct()
+        })
+
+      composition = TextDelta.compose(delta_a, delta_b)
+
+      assert composition == expected_composition
+    end
   end
 
   describe "transform" do
@@ -164,6 +193,59 @@ defmodule TextDelta.AttributesTest do
       assert transform_left == expected_left
       assert transform_right == expected_right
     end
+
+    test "empty delta - insert/retain" do
+      delta_a =
+        TextDelta.new()
+        |> TextDelta.insert(%{block: "one"}, %{
+          two: TextDelta.new() |> TextDelta.insert("three")
+        })
+
+      delta_b =
+        TextDelta.new()
+        |> TextDelta.retain(1, %{
+          two: TextDelta.new()
+        })
+
+      expected_transformation =
+        TextDelta.new()
+        |> TextDelta.insert(%{block: "one"}, %{
+          two:
+            TextDelta.new()
+            |> TextDelta.insert("three")
+        })
+
+      transfomation = TextDelta.transform(delta_b, delta_a, :left)
+
+      assert expected_transformation == transfomation
+    end
+
+    test "empty delta - retain/retain" do
+      delta_a =
+        TextDelta.new()
+        |> TextDelta.retain(1, %{
+          two: TextDelta.new() |> TextDelta.insert("three")
+        })
+
+      delta_b =
+        TextDelta.new()
+        |> TextDelta.retain(1, %{
+          two: TextDelta.new()
+        })
+
+      expected_transformation =
+        TextDelta.new()
+        |> TextDelta.retain(1, %{
+          two:
+            TextDelta.new()
+            |> TextDelta.insert("three")
+            |> Map.from_struct()
+        })
+
+      transfomation = TextDelta.transform(delta_b, delta_a, :left)
+
+      assert expected_transformation == transfomation
+    end
   end
 
   describe "diff" do
@@ -229,6 +311,37 @@ defmodule TextDelta.AttributesTest do
       diff = TextDelta.diff!(delta_a, delta_b)
 
       assert diff == expected_diff
+    end
+
+    test "empty delta" do
+      delta_a =
+        TextDelta.new()
+        |> TextDelta.insert(%{block: "one"}, %{
+          foo: true,
+          two:
+            TextDelta.new()
+            |> TextDelta.insert("three")
+        })
+
+      delta_b =
+        TextDelta.new()
+        |> TextDelta.insert(
+          %{block: "one"},
+          %{
+            foo: false,
+            two: TextDelta.new() |> TextDelta.insert("three")
+          }
+        )
+
+      delta_c =
+        TextDelta.new()
+        |> TextDelta.retain(1, %{
+          foo: false
+        })
+
+      diff = TextDelta.diff!(delta_a, delta_b)
+
+      assert diff == delta_c
     end
   end
 end
