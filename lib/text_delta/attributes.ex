@@ -72,7 +72,7 @@ defmodule TextDelta.Attributes do
     |> remove_nils(keep_nils)
   end
 
-  defp compose_attribute(_, _, %{ops: ops_before}, %{ops: ops_after}) do
+  defp compose_attribute(_, %{ops: ops_before}, _, %{ops: ops_after}) do
     delta_before = TextDelta.new(ops_before)
     delta_after = TextDelta.new(ops_after)
 
@@ -136,7 +136,11 @@ defmodule TextDelta.Attributes do
     delta_left = TextDelta.new(left_ops)
     delta_right = TextDelta.new(right_ops)
     {:ok, delta} = TextDelta.diff(delta_left, delta_right)
-    Map.put(result, key, Map.from_struct(delta))
+
+    case delta.ops do
+      [] -> result
+      _ -> Map.put(result, key, Map.from_struct(delta))
+    end
   end
 
   defp diff_attribute(attr_value_a, attr_value_b, _key, result)
