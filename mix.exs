@@ -2,23 +2,17 @@ defmodule TextDelta.Mixfile do
   use Mix.Project
 
   @version "1.7.1"
-  @github_url "https://github.com/deltadoc/text_delta"
+  @github_url "https://github.com/MeisterLabs/text_delta"
 
   def project do
     [
       app: :text_delta,
       version: @version,
-      description: description(),
-      package: package(),
-      elixir: "~> 1.6",
+      elixir: "~> 1.11",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       aliases: aliases(),
-      dialyzer: [flags: ~w(-Werror_handling
-                          -Wrace_conditions
-                          -Wunderspecs
-                          -Wunmatched_returns)],
       homepage_url: @github_url,
       source_url: @github_url,
       docs: docs()
@@ -27,26 +21,7 @@ defmodule TextDelta.Mixfile do
 
   def application, do: []
 
-  defp aliases do
-    [
-      lint: ["credo --strict", "dialyzer --halt-exit-status"]
-    ]
-  end
-
-  defp description do
-    """
-    Elixir counter-part for the Quill.js Delta library. It provides a baseline
-    for Operational Transformation of rich text.
-    """
-  end
-
-  defp package do
-    [
-      maintainers: ["Konstantin Kudryashov <ever.zet@gmail.com>"],
-      licenses: ["MIT"],
-      links: %{"GitHub" => @github_url}
-    ]
-  end
+  defp aliases, do: []
 
   defp docs do
     [
