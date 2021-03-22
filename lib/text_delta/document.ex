@@ -110,7 +110,18 @@ defmodule TextDelta.Document do
     end
   end
 
-  defp valid_document?(document) do
-    TextDelta.length(document) == TextDelta.length(document, [:insert])
+  def valid_document?(document) do
+    not invalid_document?(document)
   end
+
+  def invalid_document?(%{ops: ops}) do
+    ops
+      |> Enum.find(&Operation.invalid_document_operation?/1)
+      |> case do
+        nil -> false
+        _ -> true
+      end
+  end
+
+  def invalid_document?(_), do: true
 end
