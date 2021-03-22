@@ -176,6 +176,62 @@ defmodule TextDelta.DocumentTest do
     end
   end
 
+  test "document validation" do
+    # Valid delta
+    delta =
+      TextDelta.new()
+      |> TextDelta.insert("a")
+      |> TextDelta.insert("b", %{bold: true})
+
+    assert TextDelta.valid_document?(delta) == true
+    assert TextDelta.invalid_document?(delta) == false
+
+    # Valid nested delta
+    a_delta =
+      TextDelta.new()
+      |> TextDelta.insert("a")
+      |> TextDelta.insert("b", %{bold: true, content: delta})
+
+    assert TextDelta.valid_document?(a_delta) == true
+    assert TextDelta.invalid_document?(a_delta) == false
+
+    # Invalid delta
+    b_delta =
+      TextDelta.new()
+      |> TextDelta.insert("a")
+      |> TextDelta.retain(1)
+
+    assert TextDelta.valid_document?(b_delta) == false
+    assert TextDelta.invalid_document?(b_delta) == true
+
+    # Invalid delta
+    c_delta =
+      TextDelta.new()
+      |> TextDelta.insert("a")
+      |> TextDelta.delete(1)
+
+    assert TextDelta.valid_document?(c_delta) == false
+    assert TextDelta.invalid_document?(c_delta) == true
+
+    # Valid delta containing invalid nested delta
+    d_delta =
+      TextDelta.new()
+      |> TextDelta.insert("a")
+      |> TextDelta.insert("b", %{bold: true, content: b_delta})
+
+    assert TextDelta.valid_document?(d_delta) == false
+    assert TextDelta.invalid_document?(d_delta) == true
+
+    # Valid delta containing invalid nested delta
+    e_delta =
+      TextDelta.new()
+      |> TextDelta.insert("a")
+      |> TextDelta.insert("b", %{bold: true, content: c_delta})
+
+    assert TextDelta.valid_document?(e_delta) == false
+    assert TextDelta.invalid_document?(e_delta) == true
+  end
+
   describe "lines!" do
     test "proper document" do
       delta =
