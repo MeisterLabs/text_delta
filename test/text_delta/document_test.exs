@@ -202,7 +202,7 @@ defmodule TextDelta.DocumentTest do
       assert TextDelta.is_invalid_document?(b_delta) == false
     end
 
-    test "invalid delta #1" do
+    test "invalid delta containing retain operation" do
       delta =
         TextDelta.new()
         |> TextDelta.insert("a")
@@ -212,7 +212,7 @@ defmodule TextDelta.DocumentTest do
       assert TextDelta.is_invalid_document?(delta) == true
     end
 
-    test "invalid delta #2" do
+    test "invalid delta containing delete operation" do
       delta =
         TextDelta.new()
         |> TextDelta.insert("a")
@@ -222,7 +222,7 @@ defmodule TextDelta.DocumentTest do
       assert TextDelta.is_invalid_document?(delta) == true
     end
 
-    test "invalid nested delta #1" do
+    test "invalid delta containing nested retain operation" do
       a_delta =
         TextDelta.new()
         |> TextDelta.insert("a")
@@ -237,7 +237,7 @@ defmodule TextDelta.DocumentTest do
       assert TextDelta.is_invalid_document?(b_delta) == true
     end
 
-    test "invalid nested delta #2" do
+    test "invalid delta containing nested delete operation" do
       a_delta =
         TextDelta.new()
         |> TextDelta.insert("a")
