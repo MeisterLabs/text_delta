@@ -176,60 +176,81 @@ defmodule TextDelta.DocumentTest do
     end
   end
 
-  test "document validation" do
-    # Valid delta
-    delta =
-      TextDelta.new()
-      |> TextDelta.insert("a")
-      |> TextDelta.insert("b", %{bold: true})
+  describe "document validation" do
+    test "valid delta" do
+      delta =
+        TextDelta.new()
+        |> TextDelta.insert("a")
+        |> TextDelta.insert("b", %{bold: true})
 
-    assert TextDelta.is_valid_document?(delta) == true
-    assert TextDelta.is_invalid_document?(delta) == false
+      assert TextDelta.is_valid_document?(delta) == true
+      assert TextDelta.is_invalid_document?(delta) == false
+    end
 
-    # Valid nested delta
-    a_delta =
-      TextDelta.new()
-      |> TextDelta.insert("a")
-      |> TextDelta.insert("b", %{bold: true, content: delta})
+    test "valid nested delta" do
+      a_delta =
+        TextDelta.new()
+        |> TextDelta.insert("a")
+        |> TextDelta.insert("b", %{bold: true})
 
-    assert TextDelta.is_valid_document?(a_delta) == true
-    assert TextDelta.is_invalid_document?(a_delta) == false
+      b_delta =
+        TextDelta.new()
+        |> TextDelta.insert("a")
+        |> TextDelta.insert("b", %{bold: true, content: a_delta})
 
-    # Invalid delta
-    b_delta =
-      TextDelta.new()
-      |> TextDelta.insert("a")
-      |> TextDelta.retain(1)
+      assert TextDelta.is_valid_document?(b_delta) == true
+      assert TextDelta.is_invalid_document?(b_delta) == false
+    end
 
-    assert TextDelta.is_valid_document?(b_delta) == false
-    assert TextDelta.is_invalid_document?(b_delta) == true
+    test "invalid delta #1" do
+      delta =
+        TextDelta.new()
+        |> TextDelta.insert("a")
+        |> TextDelta.retain(1)
 
-    # Invalid delta
-    c_delta =
-      TextDelta.new()
-      |> TextDelta.insert("a")
-      |> TextDelta.delete(1)
+      assert TextDelta.is_valid_document?(delta) == false
+      assert TextDelta.is_invalid_document?(delta) == true
+    end
 
-    assert TextDelta.is_valid_document?(c_delta) == false
-    assert TextDelta.is_invalid_document?(c_delta) == true
+    test "invalid delta #2" do
+      delta =
+        TextDelta.new()
+        |> TextDelta.insert("a")
+        |> TextDelta.delete(1)
 
-    # Valid delta containing invalid nested delta
-    d_delta =
-      TextDelta.new()
-      |> TextDelta.insert("a")
-      |> TextDelta.insert("b", %{bold: true, content: b_delta})
+      assert TextDelta.is_valid_document?(delta) == false
+      assert TextDelta.is_invalid_document?(delta) == true
+    end
 
-    assert TextDelta.is_valid_document?(d_delta) == false
-    assert TextDelta.is_invalid_document?(d_delta) == true
+    test "invalid nested delta #1" do
+      a_delta =
+        TextDelta.new()
+        |> TextDelta.insert("a")
+        |> TextDelta.retain(1)
 
-    # Valid delta containing invalid nested delta
-    e_delta =
-      TextDelta.new()
-      |> TextDelta.insert("a")
-      |> TextDelta.insert("b", %{bold: true, content: c_delta})
+      b_delta =
+        TextDelta.new()
+        |> TextDelta.insert("a")
+        |> TextDelta.insert("b", %{bold: true, content: a_delta})
 
-    assert TextDelta.is_valid_document?(e_delta) == false
-    assert TextDelta.is_invalid_document?(e_delta) == true
+      assert TextDelta.is_valid_document?(b_delta) == false
+      assert TextDelta.is_invalid_document?(b_delta) == true
+    end
+
+    test "invalid nested delta #2" do
+      a_delta =
+        TextDelta.new()
+        |> TextDelta.insert("a")
+        |> TextDelta.delete(1)
+
+      b_delta =
+        TextDelta.new()
+        |> TextDelta.insert("a")
+        |> TextDelta.insert("b", %{bold: true, content: a_delta})
+
+      assert TextDelta.is_valid_document?(b_delta) == false
+      assert TextDelta.is_invalid_document?(b_delta) == true
+    end
   end
 
   describe "lines!" do
