@@ -53,7 +53,7 @@ defmodule TextDelta.Document do
   """
   @spec lines(TextDelta.state()) :: lines_result
   def lines(doc) do
-    case valid_document?(doc) do
+    case is_valid_document?(doc) do
       true -> {:ok, op_lines(TextDelta.operations(doc), TextDelta.new())}
       false -> {:error, :bad_document}
     end
@@ -110,18 +110,18 @@ defmodule TextDelta.Document do
     end
   end
 
-  def valid_document?(document) do
-    not invalid_document?(document)
+  def is_valid_document?(document) do
+    not is_invalid_document?(document)
   end
 
-  def invalid_document?(%{ops: ops}) do
+  def is_invalid_document?(%{ops: ops}) do
     ops
-      |> Enum.find(&Operation.invalid_document_operation?/1)
+      |> Enum.find(&Operation.is_invalid_document_operation?/1)
       |> case do
         nil -> false
         _ -> true
       end
   end
 
-  def invalid_document?(_), do: true
+  def is_invalid_document?(_), do: true
 end

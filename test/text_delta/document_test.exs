@@ -183,8 +183,8 @@ defmodule TextDelta.DocumentTest do
       |> TextDelta.insert("a")
       |> TextDelta.insert("b", %{bold: true})
 
-    assert TextDelta.valid_document?(delta) == true
-    assert TextDelta.invalid_document?(delta) == false
+    assert TextDelta.is_valid_document?(delta) == true
+    assert TextDelta.is_invalid_document?(delta) == false
 
     # Valid nested delta
     a_delta =
@@ -192,8 +192,8 @@ defmodule TextDelta.DocumentTest do
       |> TextDelta.insert("a")
       |> TextDelta.insert("b", %{bold: true, content: delta})
 
-    assert TextDelta.valid_document?(a_delta) == true
-    assert TextDelta.invalid_document?(a_delta) == false
+    assert TextDelta.is_valid_document?(a_delta) == true
+    assert TextDelta.is_invalid_document?(a_delta) == false
 
     # Invalid delta
     b_delta =
@@ -201,8 +201,8 @@ defmodule TextDelta.DocumentTest do
       |> TextDelta.insert("a")
       |> TextDelta.retain(1)
 
-    assert TextDelta.valid_document?(b_delta) == false
-    assert TextDelta.invalid_document?(b_delta) == true
+    assert TextDelta.is_valid_document?(b_delta) == false
+    assert TextDelta.is_invalid_document?(b_delta) == true
 
     # Invalid delta
     c_delta =
@@ -210,8 +210,8 @@ defmodule TextDelta.DocumentTest do
       |> TextDelta.insert("a")
       |> TextDelta.delete(1)
 
-    assert TextDelta.valid_document?(c_delta) == false
-    assert TextDelta.invalid_document?(c_delta) == true
+    assert TextDelta.is_valid_document?(c_delta) == false
+    assert TextDelta.is_invalid_document?(c_delta) == true
 
     # Valid delta containing invalid nested delta
     d_delta =
@@ -219,8 +219,8 @@ defmodule TextDelta.DocumentTest do
       |> TextDelta.insert("a")
       |> TextDelta.insert("b", %{bold: true, content: b_delta})
 
-    assert TextDelta.valid_document?(d_delta) == false
-    assert TextDelta.invalid_document?(d_delta) == true
+    assert TextDelta.is_valid_document?(d_delta) == false
+    assert TextDelta.is_invalid_document?(d_delta) == true
 
     # Valid delta containing invalid nested delta
     e_delta =
@@ -228,8 +228,8 @@ defmodule TextDelta.DocumentTest do
       |> TextDelta.insert("a")
       |> TextDelta.insert("b", %{bold: true, content: c_delta})
 
-    assert TextDelta.valid_document?(e_delta) == false
-    assert TextDelta.invalid_document?(e_delta) == true
+    assert TextDelta.is_valid_document?(e_delta) == false
+    assert TextDelta.is_invalid_document?(e_delta) == true
   end
 
   describe "lines!" do

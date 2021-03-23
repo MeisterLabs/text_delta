@@ -241,20 +241,20 @@ defmodule TextDelta.Attributes do
     |> Enum.into(%{})
   end
 
-  def invalid_document_attributes?(attrs) when is_nil(attrs), do: true
+  def are_invalid_document_attributes?(attrs) when is_nil(attrs), do: true
 
-  def invalid_document_attributes?(attrs) do
+  def are_invalid_document_attributes?(attrs) do
     attrs
-      |> Enum.find(&invalid_document_attribute?/1)
+      |> Enum.find(fn {_, attr} -> is_invalid_document_attribute?(attr) end)
       |> case do
         nil -> false
         _ -> true
       end
   end
 
-  def invalid_document_attribute?({_, %{ops: _} = attr}) do
-    Document.invalid_document?(attr)
+  def is_invalid_document_attribute?(%{ops: _} = attr) do
+    Document.is_invalid_document?(attr)
   end
 
-  def invalid_document_attribute?(_), do: false
+  def is_invalid_document_attribute?(_), do: false
 end
