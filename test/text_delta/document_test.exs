@@ -176,6 +176,83 @@ defmodule TextDelta.DocumentTest do
     end
   end
 
+  describe "document validation" do
+    test "valid delta" do
+      delta =
+        TextDelta.new()
+        |> TextDelta.insert("a")
+        |> TextDelta.insert("b", %{bold: true})
+
+      assert TextDelta.is_valid_document?(delta) == true
+      assert TextDelta.is_invalid_document?(delta) == false
+    end
+
+    test "valid nested delta" do
+      a_delta =
+        TextDelta.new()
+        |> TextDelta.insert("a")
+        |> TextDelta.insert("b", %{bold: true})
+
+      b_delta =
+        TextDelta.new()
+        |> TextDelta.insert("a")
+        |> TextDelta.insert("b", %{bold: true, content: a_delta})
+
+      assert TextDelta.is_valid_document?(b_delta) == true
+      assert TextDelta.is_invalid_document?(b_delta) == false
+    end
+
+    test "invalid delta containing retain operation" do
+      delta =
+        TextDelta.new()
+        |> TextDelta.insert("a")
+        |> TextDelta.retain(1)
+
+      assert TextDelta.is_valid_document?(delta) == false
+      assert TextDelta.is_invalid_document?(delta) == true
+    end
+
+    test "invalid delta containing delete operation" do
+      delta =
+        TextDelta.new()
+        |> TextDelta.insert("a")
+        |> TextDelta.delete(1)
+
+      assert TextDelta.is_valid_document?(delta) == false
+      assert TextDelta.is_invalid_document?(delta) == true
+    end
+
+    test "invalid delta containing nested retain operation" do
+      a_delta =
+        TextDelta.new()
+        |> TextDelta.insert("a")
+        |> TextDelta.retain(1)
+
+      b_delta =
+        TextDelta.new()
+        |> TextDelta.insert("a")
+        |> TextDelta.insert("b", %{bold: true, content: a_delta})
+
+      assert TextDelta.is_valid_document?(b_delta) == false
+      assert TextDelta.is_invalid_document?(b_delta) == true
+    end
+
+    test "invalid delta containing nested delete operation" do
+      a_delta =
+        TextDelta.new()
+        |> TextDelta.insert("a")
+        |> TextDelta.delete(1)
+
+      b_delta =
+        TextDelta.new()
+        |> TextDelta.insert("a")
+        |> TextDelta.insert("b", %{bold: true, content: a_delta})
+
+      assert TextDelta.is_valid_document?(b_delta) == false
+      assert TextDelta.is_invalid_document?(b_delta) == true
+    end
+  end
+
   describe "lines!" do
     test "proper document" do
       delta =

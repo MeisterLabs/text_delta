@@ -8,6 +8,8 @@ defmodule TextDelta.Attributes do
   does not make any assumptions about attribute types, values or composition.
   """
 
+  alias TextDelta.Document
+
   @typedoc """
   A set of attributes applicable to an operation.
   """
@@ -238,4 +240,21 @@ defmodule TextDelta.Attributes do
     |> Enum.filter(fn {key, _} -> not Map.has_key?(attrs_b, key) end)
     |> Enum.into(%{})
   end
+
+  def are_invalid_document_attributes?(attrs) when is_nil(attrs), do: true
+
+  def are_invalid_document_attributes?(attrs) do
+    attrs
+      |> Enum.find(fn {_, attr} -> is_invalid_document_attribute?(attr) end)
+      |> case do
+        nil -> false
+        _ -> true
+      end
+  end
+
+  def is_invalid_document_attribute?(%{ops: _} = attr) do
+    Document.is_invalid_document?(attr)
+  end
+
+  def is_invalid_document_attribute?(_), do: false
 end
