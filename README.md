@@ -1,7 +1,5 @@
 # TextDelta
 
-[![Build Status](https://travis-ci.org/deltadoc/text_delta.svg?branch=master)](https://travis-ci.org/deltadoc/text_delta)
-
 Elixir counter-part for the Quill.js [Delta](https://quilljs.com/docs/delta/)
 library. It provides a baseline for [Operational
 Transformation](https://en.wikipedia.org/wiki/Operational_transformation) of
@@ -57,13 +55,9 @@ in `mix.exs`:
 
 ```elixir
 def deps do
-  [{:text_delta, "~> 1.1.0"}]
+  [{:text_delta, git: "https://github.com/MeisterLabs/text_delta", tag: "v1.7.1"}]
 end
 ```
-
-## Documentation
-
-Documentation can be found at [https://hexdocs.pm/text_delta](https://hexdocs.pm/text_delta).
 
 ## Testing & Linting
 
@@ -71,21 +65,4 @@ This library is test-driven. In order to run tests, execute:
 
 ```bash
 $> mix test
-```
-
-If this command fails, it is most likely due to that you don't have
-[QuickCheck](http://www.quviq.com/downloads/) installed. If so, simply try:
-
-```bash
-$> mix eqc.install --mini
-```
-
-TextDelta uses property tests to validate that composition, transformation and
-compaction work as expected.
-
-The library also uses [Credo](http://credo-ci.org) and
-[Dialyzer](http://erlang.org/doc/man/dialyzer.html). To run both, execute:
-
-```bash
-$> mix lint
 ```

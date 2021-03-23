@@ -183,6 +183,8 @@ defmodule TextDelta do
   defdelegate apply!(state, delta), to: Application
   defdelegate lines(delta), to: Document
   defdelegate lines!(delta), to: Document
+  defdelegate is_invalid_document?(delta), to: Document
+  defdelegate is_valid_document?(delta), to: Document
   defdelegate diff(first, second), to: Difference
   defdelegate diff!(first, second), to: Difference
 

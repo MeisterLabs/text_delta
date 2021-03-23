@@ -20,7 +20,4 @@ erl_crash.dump
 *.ez
 
 .vscode
-
-# QuickCheck artefacts
-.eqc-info
-current_counterexample.eqc
+.DS_Store

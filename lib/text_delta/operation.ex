@@ -331,4 +331,11 @@ defmodule TextDelta.Operation do
   def trimmable?(op) do
     Map.has_key?(op, :retain) and !Map.has_key?(op, :attributes)
   end
+
+  def is_invalid_document_operation?(%{insert: _, attributes: attrs}) do
+    Attributes.are_invalid_document_attributes?(attrs)
+  end
+
+  def is_invalid_document_operation?(%{insert: _}), do: false
+  def is_invalid_document_operation?(_), do: true
 end

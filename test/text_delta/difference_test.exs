@@ -1,18 +1,7 @@
 defmodule TextDelta.DifferenceTest do
   use ExUnit.Case
-  use EQC.ExUnit
-  import TextDelta.Generators
 
   doctest TextDelta.Difference
-
-  property "applying diff always results in expected document" do
-    forall document_a <- document() do
-      forall document_b <- document() do
-        diff = TextDelta.diff!(document_a, document_b)
-        ensure(TextDelta.apply!(document_a, diff) == document_b)
-      end
-    end
-  end
 
   describe "diff" do
     test "invalid documents" do

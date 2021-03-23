@@ -8,6 +8,8 @@ defmodule TextDelta.Attributes do
   does not make any assumptions about attribute types, values or composition.
   """
 
+  alias TextDelta.Document
+
   @typedoc """
   A set of attributes applicable to an operation.
   """
@@ -53,42 +55,48 @@ defmodule TextDelta.Attributes do
     compose(first, %{}, keep_nils)
   end
 
-  def compose(first, second, true) do
-    Map.merge(first, second)
-    |> Enum.map(fn {key, _} ->
-      value_before = Map.get(first, key)
-      value_after = Map.get(second, key)
-      compose_attr(key, value_before, value_after, true)
-    end)
-  end
-
-  def compose(first, second, false) do
+  def compose(first, second, keep_nils) do
     first
     |> Map.merge(second)
     |> Enum.map(fn {key, _} ->
+      has_before = Map.has_key?(first, key)
       value_before = Map.get(first, key)
+
+      has_after = Map.has_key?(second, key)
       value_after = Map.get(second, key)
-      compose_attr(key, value_before, value_after, false)
+
+      value =
+        compose_attribute(has_before, value_before, has_after, value_after)
+
+      {key, value}
     end)
-    |> remove_nils()
+    |> Enum.into(%{})
+    |> remove_nils(keep_nils)
   end
 
-  defp compose_attr(
-         key,
-         %{ops: ops_before} = _value_before,
-         %{ops: ops_after} = _value_after,
-         _
-       ) do
+  defp compose_attribute(_, %{ops: ops_before}, _, %{ops: ops_after}) do
     delta_before = TextDelta.new(ops_before)
     delta_after = TextDelta.new(ops_after)
-    delta_patch = TextDelta.compose(delta_before, delta_after)
-    {key, Map.from_struct(delta_patch)}
+
+    delta_before
+    |> TextDelta.compose(delta_after)
+    |> Map.from_struct()
   end
 
-  defp compose_attr(key, nil, value_after, _keep_nils), do: {key, value_after}
-  defp compose_attr(key, value_before, nil, false), do: {key, value_before}
-  defp compose_attr(key, _value_before, nil, true), do: {key, nil}
-  defp compose_attr(key, _value_before, value_after, _keep_nils), do: {key, value_after}
+  defp compose_attribute(has_before, _value_before, has_after, value_after)
+       when has_before and has_after do
+    value_after
+  end
+
+  defp compose_attribute(has_before, _value_before, has_after, value_after)
+       when not has_before and has_after do
+    value_after
+  end
+
+  defp compose_attribute(has_before, value_before, has_after, _value_after)
+       when has_before and not has_after do
+    value_before
+  end
 
   @doc """
   Calculates and returns difference between two sets of attributes.
@@ -130,7 +138,11 @@ defmodule TextDelta.Attributes do
     delta_left = TextDelta.new(left_ops)
     delta_right = TextDelta.new(right_ops)
     {:ok, delta} = TextDelta.diff(delta_left, delta_right)
-    Map.put(result, key, Map.from_struct(delta))
+
+    case delta.ops do
+      [] -> result
+      _ -> Map.put(result, key, Map.from_struct(delta))
+    end
   end
 
   defp diff_attribute(attr_value_a, attr_value_b, _key, result)
@@ -186,13 +198,25 @@ defmodule TextDelta.Attributes do
     right_keys = Map.keys(right)
     keys = Enum.uniq(left_keys ++ right_keys)
 
-    keys = keys
+    keys
     |> Enum.reduce(%{}, fn key, acc ->
-      transform_nested_delta(acc, key, Map.get(left, key), Map.get(right, key), priority)
+      transform_nested_delta(
+        acc,
+        key,
+        Map.get(left, key),
+        Map.get(right, key),
+        priority
+      )
     end)
   end
 
-  def transform_nested_delta(acc, key, %{ops: ops_left}, %{ops: ops_right}, priority) do
+  def transform_nested_delta(
+        acc,
+        key,
+        %{ops: ops_left},
+        %{ops: ops_right},
+        priority
+      ) do
     delta_left = TextDelta.new(ops_left)
     delta_right = TextDelta.new(ops_right)
     delta = TextDelta.transform(delta_left, delta_right, priority)
@@ -203,22 +227,9 @@ defmodule TextDelta.Attributes do
     acc
   end
 
-  defp add_changes(result, from, to) do
-    to
-    |> Enum.filter(fn {key, val} -> Map.get(from, key) != val end)
-    |> Enum.into(%{})
-    |> Map.merge(result)
-  end
+  defp remove_nils(result, true), do: result
 
-  defp add_deletions(result, from, to) do
-    from
-    |> Enum.filter(fn {key, _} -> not Map.has_key?(to, key) end)
-    |> Enum.map(fn {key, _} -> {key, nil} end)
-    |> Enum.into(%{})
-    |> Map.merge(result)
-  end
-
-  defp remove_nils(result) do
+  defp remove_nils(result, false) do
     result
     |> Enum.filter(fn {_, v} -> not is_nil(v) end)
     |> Enum.into(%{})
@@ -229,4 +240,21 @@ defmodule TextDelta.Attributes do
     |> Enum.filter(fn {key, _} -> not Map.has_key?(attrs_b, key) end)
     |> Enum.into(%{})
   end
+
+  def are_invalid_document_attributes?(attrs) when is_nil(attrs), do: true
+
+  def are_invalid_document_attributes?(attrs) do
+    attrs
+      |> Enum.find(fn {_, attr} -> is_invalid_document_attribute?(attr) end)
+      |> case do
+        nil -> false
+        _ -> true
+      end
+  end
+
+  def is_invalid_document_attribute?(%{ops: _} = attr) do
+    Document.is_invalid_document?(attr)
+  end
+
+  def is_invalid_document_attribute?(_), do: false
 end
